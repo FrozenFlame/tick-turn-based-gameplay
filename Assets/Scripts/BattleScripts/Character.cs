@@ -94,6 +94,5 @@ public class Character : MonoBehaviour
         character.TakeDamage(5);
     }
 
-    // void CastSpell(Spell spell)
-
+    // void CastSpell(Spell spell) stub
 }
