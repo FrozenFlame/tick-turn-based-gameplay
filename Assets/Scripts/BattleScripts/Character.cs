@@ -124,9 +124,7 @@ public class Character : MonoBehaviour
 
     // stubs
     // Effect[] active_effects;
-    // questions
-    // - what other stats should a character have? besides the ones above
-    //   strength, intelligence, agility?
+    // Equipment[] equipment; (usually up to two only);
 
     void Start()
     {
