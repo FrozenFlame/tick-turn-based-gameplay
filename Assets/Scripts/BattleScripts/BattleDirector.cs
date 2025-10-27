@@ -28,7 +28,7 @@ public class BattleDirector : MonoBehaviour
 
     void Update()
     {
-        
+        OnTick();
     }
 
     /***
@@ -67,9 +67,17 @@ public class BattleDirector : MonoBehaviour
      **/
     //void ChangeState(enum new_state) stub
 
-    void EmitOnTick()
+    void OnTick()
     {
         // loop through `characters[]` to have them call their `OnTick()` functions
+        if (characters != null)
+        {
+            for (int i = 0; i < characters.Count; i++)
+            {
+                Character character = characters[i];
+                character.OnTick();
+            }
+        }
     }
 
     //void OnCharacterReady(Character character) stub
@@ -98,9 +106,9 @@ public class BattleDirector : MonoBehaviour
         for (int i = 0; i < wolf_count; i++)
         {
             GameObject wolf_gameobject = DebugCreateWolf(i);
-            int is_odd = i % 2;
-            float enemy_position_y = (is_odd == 0) ? 0 : 1.5f;
-            float enemy_position_x = (2 + (i * 2));
+            bool is_even = i % 2 == 0;
+            float enemy_position_y = (is_even) ? 1.5f : 0;
+            float enemy_position_x = (3 + (i * 2));
 
             wolf_gameobject.transform.position = new Vector2(enemy_position_x, enemy_position_y);
             Character wolf_character = DebugAttachWolfCharacter(wolf_gameobject);
@@ -148,6 +156,8 @@ public class BattleDirector : MonoBehaviour
         Character wolf_character = wolf.GetComponent<Character>();
         wolf_character.char_name = wolf.name;
         wolf_character.health_base = 30;
+        wolf_character.speed_base = 3;
+        wolf_character.readiness_threshold_base = 100;
         wolf_character.physical_attack_base = 5;
         wolf_character.magical_attack_base = 0;
         wolf_character.physical_defense_base = 2;
@@ -163,7 +173,7 @@ public class BattleDirector : MonoBehaviour
             GameObject hero_gameobject = DebugCreateHeroGameObject(i);
             int is_odd = i % 2;
             float hero_position_y = (is_odd == 0) ? 0 : - 1.5f;
-            float hero_position_x = (2 + (i * 2)) * -1;
+            float hero_position_x = (4 + (i * 2)) * -1;
 
             hero_gameobject.transform.position = new Vector2(hero_position_x, hero_position_y);
             Character hero_character = DebugAttachHeroCharacter(hero_gameobject);
@@ -206,6 +216,8 @@ public class BattleDirector : MonoBehaviour
         Character hero_character = hero.GetComponent<Character>();
         hero_character.char_name = hero.name;
         hero_character.health_base = 30;
+        hero_character.speed_base = 5;
+        hero_character.readiness_threshold_base = 100;
         hero_character.physical_attack_base = 5;
         hero_character.magical_attack_base = 0;
         hero_character.physical_defense_base = 2;

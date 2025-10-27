@@ -5,7 +5,7 @@ public class Character : MonoBehaviour
     private string char_name_;
     public string char_name
     {
-        get {  return char_name_; }
+        get { return char_name_; }
         set { char_name_ = value; }
     }
 
@@ -125,6 +125,7 @@ public class Character : MonoBehaviour
     // stubs
     // Effect[] active_effects;
     // Equipment[] equipment; (usually up to two only);
+    // State state -- state of some sort maybe like: waiting, ready, skipped, finished, etc. could be useful for other logic stuff.
 
     void Start()
     {
@@ -133,7 +134,7 @@ public class Character : MonoBehaviour
 
     void OnDestroy()
     {
-        Debug.Log("I have been destroyed");    
+        Debug.Log("I have been destroyed");
     }
 
     void Update()
@@ -146,9 +147,19 @@ public class Character : MonoBehaviour
 
     }
 
-    void OnTick()
+    public void OnTick()
     {
-
+        if (!IsReady())
+        {
+            TickActionPoints();
+            Debug.Log("My action points ticked");
+            Debug.Log(GetAccumulatedActionPoints());
+        }
+        else
+        {
+            // do whatever.
+            Debug.Log("I AM READY - " + char_name);
+        }
     }
 
     void Ready()
@@ -162,28 +173,70 @@ public class Character : MonoBehaviour
 
     float GetEffectiveHealth()
     {
-        return health_base_ + health_modifier;
+        float net_health = health_base + health_modifier;
+        // can do other stuff...
+        return net_health;
     }
 
     void TakeDamage(float damage)
     {
-        // stub logic
-        health_modifier -= damage;
+        float net_damage = damage;
+        // can do other stuff...
+        health_modifier -= net_damage;
     }
 
     /***
      * Mana Functions
      **/
 
-    void AddMana(float value)
+    void ModifyMana(float value)
     {
-        // stub logic
-        mana_modifier += value;
+        float net_addition = value;
+        // can do other things...
+        mana_modifier += net_addition;
     }
 
     /***
      * Speed Functions
      **/
+    float GetEffectiveSpeed()
+    {
+        float net_speed = speed_base + speed_modifier;
+        // can do other stuff...
+        return net_speed;
+    }
+
+    void TickActionPoints()
+    {
+        float added_points = GetEffectiveSpeed();
+        // can do other stuff...
+        action_points_modifier += added_points;
+    }
+
+    float GetAccumulatedActionPoints()
+    {
+        float net_action_points = action_points_base + action_points_modifier;
+        // can do other stuff
+        return net_action_points;
+    }
+
+    bool IsReady()
+    {
+        Debug.Log("GetAccumulatedActionPoints()");
+        Debug.Log(GetAccumulatedActionPoints());
+        Debug.Log("GetEffectiveReadinessThreshold()");
+        Debug.Log(GetEffectiveReadinessThreshold());
+        bool is_ready = GetAccumulatedActionPoints() >= GetEffectiveReadinessThreshold();
+        // can do other stuff...
+        return is_ready;
+    }
+
+    float GetEffectiveReadinessThreshold()
+    {
+        float net_threshold = readiness_threshold_base + readiness_threshold_modifier;
+        // can do other things...
+        return net_threshold;
+    }
 
 
     /***
@@ -191,10 +244,9 @@ public class Character : MonoBehaviour
      **/
     void Attack(Character character)
     {
-        // stub ideas for now
         // hard coded damage for now
         character.TakeDamage(5);
     }
 
-    // void CastSpell(Spell spell) stub
+    // void CastSkill(Skill skill) stub
 }
