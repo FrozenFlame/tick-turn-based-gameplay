@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -7,8 +8,8 @@ public class BattleDirector : MonoBehaviour
     // enum current_battle_state;
     List<Character> characters;
     // Map<Character[]> team_members; // stub idk if Map is the right tool for the job
-    // Character[] ready_characters;
-    // Character[] execution_queue;
+    List<Character> ready_characters;
+    Queue<Character> execution_queue;
     // int ticks;
     // bool should_execute_tick;
     // FieldEffect[] active_field_effects;
@@ -18,6 +19,8 @@ public class BattleDirector : MonoBehaviour
     {
         Debug.Log("The BattleDirector");
         characters = new List<Character>();
+        ready_characters = new List<Character>();
+        execution_queue = new Queue<Character>();
         StartBattle();
     }
 
@@ -26,10 +29,6 @@ public class BattleDirector : MonoBehaviour
         Debug.Log("BattleDirector Removed");
     }
 
-    void Update()
-    {
-        OnTick();
-    }
 
     /***
      * Battle lifetime functions
@@ -43,6 +42,15 @@ public class BattleDirector : MonoBehaviour
         // temp for now, it will be hard-coded for this proof of concept
         DebugCreateHeroes(2);
         DebugSimulateSummonWolves();
+
+        characters.ForEach(c =>
+        {
+            c.EmitCharacterReady += ListenOnCharacterReady;
+        });
+
+        // note: probably we need to remove the listeners when the battle is resolved
+
+        StartCoroutine(BattleLoop());
     }
 
     void EndBattle()
@@ -67,30 +75,90 @@ public class BattleDirector : MonoBehaviour
      **/
     //void ChangeState(enum new_state) stub
 
-    void OnTick()
+    IEnumerator BattleLoop()
     {
-        // loop through `characters[]` to have them call their `OnTick()` functions
-        if (characters != null)
+        while (true) // TODO: change this to check current battle state for event/resolution handling
         {
-            for (int i = 0; i < characters.Count; i++)
+            if (ready_characters.Count == 0)
             {
-                Character character = characters[i];
-                character.OnTick();
+                yield return new WaitForSeconds(1f);
+                OnTick();
+            }
+            else
+            {
+                PrepareExecutionQueue();
+                while (execution_queue.Count > 0)
+                {
+                    Character next_character = PopFromExecutionQueue();
+                    yield return StartCoroutine(HandleCharacterTurn(next_character));
+                    Debug.Log("Finished handling turn for " + next_character.char_name);
+                }
+                ready_characters.Clear();
             }
         }
     }
 
-    //void OnCharacterReady(Character character) stub
-    void PrepareExecutionQueue()
-    {
+    /***
+     * Turn management functions
+     **/
 
+    void ListenOnCharacterReady(Character character)
+    {
+        if (!ready_characters.Contains(character))
+        {
+            ready_characters.Add(character);
+        }
     }
 
-    //void RemoveFromExecutionQueue(Character character) stub
+    IEnumerator HandleCharacterTurn(Character character)
+    {
+        yield return character.TakeTurn();
+    }
+
+    void OnTick()
+    {
+        if (characters != null)
+        {
+            characters.ForEach(c =>
+            {
+                c.Tick();
+            });
+        }
+    }
+
+    void PrepareExecutionQueue()
+    {
+        Debug.Log("unsorted ready list:");
+        ready_characters.ForEach(c => Debug.Log(c.char_name + " with speed " + c.GetEffectiveSpeed()));
+
+        ready_characters.Sort((a, b) => b.GetEffectiveSpeed().CompareTo(a.GetEffectiveSpeed()));
+
+        Debug.Log("sorted ready list:");
+        ready_characters.ForEach(c => Debug.Log(c.char_name + " with speed " + c.GetEffectiveSpeed()));
+
+        ready_characters.ForEach(c =>
+        {
+            PushIntoExecutionQueue(c);
+        });
+    }
+
+    Character PushIntoExecutionQueue(Character character)
+    {
+        execution_queue.Enqueue(character);
+        // can do anything here.
+        return character;
+    }
+
+    Character PopFromExecutionQueue()
+    {
+        Character character = execution_queue.Dequeue();
+        // can do anything here.
+        return character;
+    }
 
     void EmptyQueues()
     {
-        
+        // stub
     }
 
 

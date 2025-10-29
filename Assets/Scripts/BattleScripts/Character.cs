@@ -1,3 +1,5 @@
+using System;
+using System.Collections;
 using UnityEngine;
 
 public class Character : MonoBehaviour
@@ -122,6 +124,9 @@ public class Character : MonoBehaviour
     public float magical_defense_modifier;
 
 
+    public event Action<Character> EmitCharacterReady;
+
+
     // stubs
     // Effect[] active_effects;
     // Equipment[] equipment; (usually up to two only);
@@ -147,18 +152,18 @@ public class Character : MonoBehaviour
 
     }
 
-    public void OnTick()
+    public void Tick()
     {
         if (!IsReady())
         {
             TickActionPoints();
-            Debug.Log("My action points ticked");
-            Debug.Log(GetAccumulatedActionPoints());
+            Debug.Log(char_name + ": " + GetAccumulatedActionPoints());
         }
         else
         {
             // do whatever.
             Debug.Log("I AM READY - " + char_name);
+            EmitCharacterReady?.Invoke(this);
         }
     }
 
@@ -199,7 +204,7 @@ public class Character : MonoBehaviour
     /***
      * Speed Functions
      **/
-    float GetEffectiveSpeed()
+    public float GetEffectiveSpeed()
     {
         float net_speed = speed_base + speed_modifier;
         // can do other stuff...
@@ -220,15 +225,23 @@ public class Character : MonoBehaviour
         return net_action_points;
     }
 
+    /***
+     * Turn Functions
+     **/
+
     bool IsReady()
     {
-        Debug.Log("GetAccumulatedActionPoints()");
-        Debug.Log(GetAccumulatedActionPoints());
-        Debug.Log("GetEffectiveReadinessThreshold()");
-        Debug.Log(GetEffectiveReadinessThreshold());
         bool is_ready = GetAccumulatedActionPoints() >= GetEffectiveReadinessThreshold();
         // can do other stuff...
         return is_ready;
+    }
+
+    public IEnumerator TakeTurn()
+    {
+        // Example test for now
+        Debug.Log(char_name + ": Pretending to take my turn delaying by 3 seconds...");
+        action_points_modifier = 0;
+        yield return new WaitForSeconds(3f);
     }
 
     float GetEffectiveReadinessThreshold()
