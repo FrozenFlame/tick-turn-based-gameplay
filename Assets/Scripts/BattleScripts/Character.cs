@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using UnityEngine;
+using BattleScripts.Enums;
 
 public class Character : MonoBehaviour
 {
@@ -124,7 +125,9 @@ public class Character : MonoBehaviour
     public float magical_defense_modifier;
 
 
-    public event Action<Character> EmitCharacterReady;
+    public event Action<Character> emit_character_ready;
+
+    CharacterStateEnum character_state;
 
 
     // stubs
@@ -146,10 +149,10 @@ public class Character : MonoBehaviour
     {
 
     }
-
+    
     void BattleStart()
     {
-
+        character_state = CharacterStateEnum.IDLE;
     }
 
     public void Tick()
@@ -163,7 +166,7 @@ public class Character : MonoBehaviour
         {
             // do whatever.
             Debug.Log("I AM READY - " + char_name);
-            EmitCharacterReady?.Invoke(this);
+            emit_character_ready?.Invoke(this);
         }
     }
 

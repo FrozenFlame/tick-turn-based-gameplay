@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using BattleScripts.Enums;
 
 public class BattleDirector : MonoBehaviour
 {
@@ -10,14 +11,16 @@ public class BattleDirector : MonoBehaviour
     // Map<Character[]> team_members; // stub idk if Map is the right tool for the job
     List<Character> ready_characters;
     Queue<Character> execution_queue;
-    // int ticks;
-    // bool should_execute_tick;
-    // FieldEffect[] active_field_effects;
-    // combat_log -- todo
+    ControlContextEnum control_context;
+// int ticks;
+// bool should_execute_tick;
+// FieldEffect[] active_field_effects;
+// combat_log -- todo
 
     void Start()
     {
         Debug.Log("The BattleDirector");
+        control_context = ControlContextEnum.WAITING;
         characters = new List<Character>();
         ready_characters = new List<Character>();
         execution_queue = new Queue<Character>();
@@ -45,7 +48,7 @@ public class BattleDirector : MonoBehaviour
 
         characters.ForEach(c =>
         {
-            c.EmitCharacterReady += ListenOnCharacterReady;
+            c.emit_character_ready += ListenOnCharacterReady;
         });
 
         // note: probably we need to remove the listeners when the battle is resolved
@@ -56,6 +59,10 @@ public class BattleDirector : MonoBehaviour
     void EndBattle()
     {
         // some clean-up operations i guess
+        characters.ForEach(c =>
+        {
+            c.emit_character_ready -= ListenOnCharacterReady;
+        });
     }
     
 
@@ -108,6 +115,25 @@ public class BattleDirector : MonoBehaviour
         {
             ready_characters.Add(character);
         }
+    }
+
+    float Sample(float f)
+    {
+        return 0.0f;
+    }
+
+    void ListenCharacterTakeTurn(Character character)
+    {
+        Dictionary<string, Character> dict = new Dictionary<string, Character>();
+        dict.Add(character.char_name, character);
+
+        //dict["vov0"].health_modifier;
+
+        /*
+         
+        Dictionary<string, CharacterUI> dict_ui = new Dictionary<string, CharacterUI>();
+        dict_ui[character.char_name].ShowButton(true);
+        */
     }
 
     IEnumerator HandleCharacterTurn(Character character)
