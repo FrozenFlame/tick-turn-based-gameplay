@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using BattleScripts.Enums;
+using BattleScripts.enums;
 
 public class BattleDirector : MonoBehaviour
 {
@@ -12,10 +13,11 @@ public class BattleDirector : MonoBehaviour
     List<Character> ready_characters;
     Queue<Character> execution_queue;
     ControlContextEnum control_context;
-// int ticks;
-// bool should_execute_tick;
-// FieldEffect[] active_field_effects;
-// combat_log -- todo
+    BattleStateEnum battle_state;
+    // int ticks;
+    // bool should_execute_tick;
+    // FieldEffect[] active_field_effects;
+    // combat_log -- todo
 
     void Start()
     {
@@ -24,6 +26,7 @@ public class BattleDirector : MonoBehaviour
         characters = new List<Character>();
         ready_characters = new List<Character>();
         execution_queue = new Queue<Character>();
+        battle_state = BattleStateEnum.WAITING;
         StartBattle();
     }
 
@@ -53,6 +56,7 @@ public class BattleDirector : MonoBehaviour
 
         // note: probably we need to remove the listeners when the battle is resolved
 
+        battle_state = BattleStateEnum.IN_PROGRESS;
         StartCoroutine(BattleLoop());
     }
 
