@@ -56,7 +56,7 @@ public class BattleDirector : MonoBehaviour
 
         // note: probably we need to remove the listeners when the battle is resolved
 
-        battle_state = BattleStateEnum.IN_PROGRESS;
+        battle_state = BattleStateEnum.WAITING;
         StartCoroutine(BattleLoop());
     }
 
@@ -142,6 +142,9 @@ public class BattleDirector : MonoBehaviour
 
     IEnumerator HandleCharacterTurn(Character character)
     {
+        // TODO: if player-controlled character:
+        // reset action panel state, load up with character-specific info
+        // show action panel
         yield return character.TakeTurn();
     }
 

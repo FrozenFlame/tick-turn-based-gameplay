@@ -1,7 +1,9 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using BattleScripts.Enums;
+using BattleScripts.Abilities;
 
 public class Character : MonoBehaviour
 {
@@ -125,10 +127,14 @@ public class Character : MonoBehaviour
     public float magical_defense_modifier;
 
 
+    // TODO: stuff above maybe could be simplified, for now leave it.
+
     public event Action<Character> emit_character_ready;
 
-    CharacterStateEnum character_state;
+    private CharacterStateEnum state;
+    public CharacterFactionEnum faction;
 
+    public List<IAbility> abilities;
 
     // stubs
     // Effect[] active_effects;
@@ -152,7 +158,7 @@ public class Character : MonoBehaviour
     
     void BattleStart()
     {
-        character_state = CharacterStateEnum.IDLE;
+        state = CharacterStateEnum.IDLE;
     }
 
     public void Tick()
@@ -161,11 +167,13 @@ public class Character : MonoBehaviour
         {
             TickActionPoints();
             Debug.Log(char_name + ": " + GetAccumulatedActionPoints());
+            state = CharacterStateEnum.IDLE;
         }
         else
         {
             // do whatever.
             Debug.Log("I AM READY - " + char_name);
+            state = CharacterStateEnum.READY;
             emit_character_ready?.Invoke(this);
         }
     }
@@ -179,17 +187,16 @@ public class Character : MonoBehaviour
      * Health Functions
      **/
 
-    float GetEffectiveHealth()
+    public float GetEffectiveHealth()
     {
         float net_health = health_base + health_modifier;
         // can do other stuff...
         return net_health;
     }
 
-    void TakeDamage(float damage)
+    public void TakeDamage(float damage)
     {
         float net_damage = damage;
-        // can do other stuff...
         health_modifier -= net_damage;
     }
 
@@ -197,7 +204,7 @@ public class Character : MonoBehaviour
      * Mana Functions
      **/
 
-    void ModifyMana(float value)
+    public void ModifyMana(float value)
     {
         float net_addition = value;
         // can do other things...
@@ -221,7 +228,7 @@ public class Character : MonoBehaviour
         action_points_modifier += added_points;
     }
 
-    float GetAccumulatedActionPoints()
+    public float GetAccumulatedActionPoints()
     {
         float net_action_points = action_points_base + action_points_modifier;
         // can do other stuff
@@ -232,7 +239,7 @@ public class Character : MonoBehaviour
      * Turn Functions
      **/
 
-    bool IsReady()
+    public bool IsReady()
     {
         bool is_ready = GetAccumulatedActionPoints() >= GetEffectiveReadinessThreshold();
         // can do other stuff...
@@ -242,9 +249,17 @@ public class Character : MonoBehaviour
     public IEnumerator TakeTurn()
     {
         // Example test for now
-        Debug.Log(char_name + ": Pretending to take my turn delaying by 3 seconds...");
+        Debug.Log(char_name + ": Taking my turn...");
+        state = CharacterStateEnum.ACTIVE;
+        bool has_action_queued = false;
+        while (!has_action_queued)
+        {
+            // do nothing but wait
+        }
+        
+        // TODO: proper overflow logic
         action_points_modifier = 0;
-        yield return new WaitForSeconds(3f);
+        yield return null;
     }
 
     float GetEffectiveReadinessThreshold()
@@ -256,12 +271,11 @@ public class Character : MonoBehaviour
 
 
     /***
-     * Actions Functions
+     * Turn Action Functions
      **/
-    void Attack(Character character)
+    void ListenPerformAction()
     {
-        // hard coded damage for now
-        character.TakeDamage(5);
+        Debug.Log("Perfomring an action...");
     }
 
     // void CastSkill(Skill skill) stub
