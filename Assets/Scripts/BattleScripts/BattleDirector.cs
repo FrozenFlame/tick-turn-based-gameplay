@@ -19,9 +19,14 @@ public class BattleDirector : MonoBehaviour
     // FieldEffect[] active_field_effects;
     // combat_log -- todo
 
+    event System.Action emit_instruction_issued; // placeholder
+
+    [SerializeField] private GameObject action_panel_ui;
+
     void Start()
     {
         Debug.Log("The BattleDirector");
+        // action_panel_ui // do nothing for now
         control_context = ControlContextEnum.WAITING;
         characters = new List<Character>();
         ready_characters = new List<Character>();
@@ -92,7 +97,7 @@ public class BattleDirector : MonoBehaviour
         {
             if (ready_characters.Count == 0)
             {
-                yield return new WaitForSeconds(1f);
+                yield return new WaitForSeconds(0.33f);
                 OnTick();
             }
             else
@@ -103,6 +108,7 @@ public class BattleDirector : MonoBehaviour
                     Character next_character = PopFromExecutionQueue();
                     yield return StartCoroutine(HandleCharacterTurn(next_character));
                     Debug.Log("Finished handling turn for " + next_character.char_name);
+                    emit_instruction_issued -= next_character.ListenForInstructions;
                 }
                 ready_characters.Clear();
             }
@@ -120,11 +126,7 @@ public class BattleDirector : MonoBehaviour
             ready_characters.Add(character);
         }
     }
-
-    float Sample(float f)
-    {
-        return 0.0f;
-    }
+    
 
     void ListenCharacterTakeTurn(Character character)
     {
@@ -145,6 +147,15 @@ public class BattleDirector : MonoBehaviour
         // TODO: if player-controlled character:
         // reset action panel state, load up with character-specific info
         // show action panel
+        emit_instruction_issued += character.ListenForInstructions;
+        Debug.Log("Here is the position of the character: ");
+        Transform character_transform = character.transform;
+        RectTransform ui_rect_transform = action_panel_ui.GetComponent<RectTransform>();
+        Debug.Log($"X:{character.transform.position.x}, Y: {character.transform.position.y}");
+        Vector2 new_position = character_transform.position + new Vector3(0, 1.5f);
+        Vector2 screen_position = Camera.main.WorldToScreenPoint(new_position);
+        ui_rect_transform.position = screen_position;
+
         yield return character.TakeTurn();
     }
 
@@ -325,6 +336,16 @@ public class BattleDirector : MonoBehaviour
         hero_character.magical_defense_base = 0;
 
         return hero_character;
+    }
+
+
+    /***
+     * Temporary exposed button function
+     **/
+    public void ClickedAttack()
+    {
+        Debug.Log("Attack button clicked");
+        emit_instruction_issued?.Invoke();
     }
 }
 

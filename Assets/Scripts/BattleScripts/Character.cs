@@ -136,6 +136,8 @@ public class Character : MonoBehaviour
 
     public List<IAbility> abilities;
 
+    public bool has_instruction_queued;
+
     // stubs
     // Effect[] active_effects;
     // Equipment[] equipment; (usually up to two only);
@@ -251,10 +253,14 @@ public class Character : MonoBehaviour
         // Example test for now
         Debug.Log(char_name + ": Taking my turn...");
         state = CharacterStateEnum.ACTIVE;
-        bool has_action_queued = false;
-        while (!has_action_queued)
+        has_instruction_queued = false;
+        while (!has_instruction_queued)
         {
             // do nothing but wait
+            // temp fallback exit in case user cannot get out of this loop
+            //Debug.Log("Waiting for instructions");
+            // loop delay to not have it run too much in a period of time.
+            yield return new WaitForSeconds(0.5f);
         }
         
         // TODO: proper overflow logic
@@ -273,9 +279,10 @@ public class Character : MonoBehaviour
     /***
      * Turn Action Functions
      **/
-    void ListenPerformAction()
+    public void ListenForInstructions()
     {
-        Debug.Log("Perfomring an action...");
+        Debug.Log("Performing an action...");
+        has_instruction_queued = true;
     }
 
     // void CastSkill(Skill skill) stub
