@@ -33,11 +33,10 @@ public class BattleDirector : MonoBehaviour
         battle_context = new BattleContext();
         ticks = 0;
         should_execute_tick = false;
-        control_context = ControlContextEnum.WAITING;
+        ChangeControlContext(ControlContextEnum.WAITING);
         characters = new List<Character>();
         ready_characters = new List<Character>();
         execution_queue = new Queue<Character>();
-        battle_state = BattleStateEnum.WAITING;
         StartBattle();
     }
 
@@ -64,7 +63,7 @@ public class BattleDirector : MonoBehaviour
 
         // note: probably we need to remove the listeners when the battle is resolved
         battle_context.SortRosters();
-        battle_state = BattleStateEnum.WAITING;
+        ChangeBattleState(BattleStateEnum.WAITING);
         should_execute_tick = true;
         StartCoroutine(BattleLoop());
     }
@@ -90,7 +89,6 @@ public class BattleDirector : MonoBehaviour
     /***
      * Battle flow functions
      **/
-    //void ChangeState(enum new_state) stub
 
     IEnumerator BattleLoop()
     {
@@ -114,6 +112,18 @@ public class BattleDirector : MonoBehaviour
                 ready_characters.Clear();
             }
         }
+    }
+
+    void ChangeBattleState(BattleStateEnum new_state)
+    {
+        // can do stuff here when needed...
+        battle_state = new_state;
+    }
+
+    void ChangeControlContext(ControlContextEnum new_context)
+    {
+        // can do stuff...
+        control_context = new_context;
     }
 
     /***
@@ -162,6 +172,12 @@ public class BattleDirector : MonoBehaviour
         if (!should_execute_tick) return;
 
         ticks++;
+
+        TickProcesses();
+    }
+
+    void TickProcesses()
+    {
         if (characters != null) characters.ForEach(c => c.Tick());
     }
 

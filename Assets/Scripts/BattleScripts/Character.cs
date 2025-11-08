@@ -131,12 +131,14 @@ public class Character : MonoBehaviour
 
     public event Action<Character> emit_character_ready;
 
-    private CharacterStateEnum state;
+    private CharacterStateEnum state_;
     public CharacterFactionEnum faction;
 
     public List<IAbility> abilities;
 
     public bool has_instruction_queued;
+
+    private Character target_character_;
 
     // stubs
     // Effect[] active_effects;
@@ -160,7 +162,7 @@ public class Character : MonoBehaviour
     
     void BattleStart()
     {
-        state = CharacterStateEnum.IDLE;
+        ChangeState(CharacterStateEnum.IDLE);
     }
 
     public void Tick()
@@ -169,20 +171,17 @@ public class Character : MonoBehaviour
         {
             TickActionPoints();
             Debug.Log(char_name + ": " + GetAccumulatedActionPoints());
-            state = CharacterStateEnum.IDLE;
+            if (IsReady()) Ready();
         }
-        else
-        {
-            // do whatever.
-            Debug.Log("I AM READY - " + char_name);
-            state = CharacterStateEnum.READY;
-            emit_character_ready?.Invoke(this);
-        }
+        else Ready();
     }
 
     void Ready()
     {
-
+        // do whatever.
+        Debug.Log("I AM READY - " + char_name);
+        ChangeState(CharacterStateEnum.READY);
+        emit_character_ready?.Invoke(this);
     }
 
     /***
@@ -210,7 +209,6 @@ public class Character : MonoBehaviour
     /***
      * Mana Functions
      **/
-
     public void ModifyMana(float value)
     {
         float net_addition = value;
@@ -243,9 +241,16 @@ public class Character : MonoBehaviour
     }
 
     /***
+     * Effects Functions
+     **/
+    public void ExecuteEffects()
+    {
+        // stub
+    }
+
+    /***
      * Turn Functions
      **/
-
     public bool IsReady()
     {
         bool is_ready = GetAccumulatedActionPoints() >= GetEffectiveReadinessThreshold();
@@ -257,7 +262,7 @@ public class Character : MonoBehaviour
     {
         // Example test for now
         Debug.Log(char_name + ": Taking my turn...");
-        state = CharacterStateEnum.ACTIVE;
+        ChangeState(CharacterStateEnum.ACTIVE);
         has_instruction_queued = false;
         while (!has_instruction_queued)
         {
@@ -270,6 +275,7 @@ public class Character : MonoBehaviour
         
         // TODO: proper overflow logic
         action_points_modifier = 0;
+        ChangeState(CharacterStateEnum.IDLE);
         yield return null;
     }
 
@@ -280,14 +286,26 @@ public class Character : MonoBehaviour
         return net_threshold;
     }
 
+    /***
+     * Targeting Functions
+     **/
+    public void SetTargetCharacter(Character target)
+    {
+        target_character_ = target;
+    }
 
     /***
-     * Turn Action Functions
+     * Action Functions
      **/
     public void ListenForInstructions()
     {
         Debug.Log("Performing an action...");
         has_instruction_queued = true;
+    }
+
+    public void ChangeState(CharacterStateEnum new_state)
+    {
+        state_ = new_state;
     }
 
     // void CastSkill(Skill skill) stub
