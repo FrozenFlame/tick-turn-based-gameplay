@@ -19,10 +19,12 @@ namespace BattleScripts
 
         public void SetSelectedAbility(IAbility ability)
         {
+            Debug.Log("Ability selected: " + ability.name);
             selected_ability_ = ability;
         }
         public void SetSelectedTarget(Character target)
         {
+            Debug.Log("Target selected: " + target.char_name);
             selected_target_ = target;
         }
 

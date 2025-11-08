@@ -16,7 +16,7 @@ namespace BattleScripts.Actions
             this.damage_type = damage_type;
         }
 
-        public void PerformAction(BattleContext context)
+        public void PerformAction(BattleContext context = null)
         {
             float outgoing_attack_damage = 0f;
             float defense = 0f;
@@ -41,8 +41,12 @@ namespace BattleScripts.Actions
 
             float net_damage = outgoing_attack_damage - defense;
             target.TakeDamage(net_damage);
-            string type_str = damage_type == DamageTypeEnum.PHYSICAL ? "physical" : "magical";
-            Debug.Log($"{attacker.char_name} dealt {type_str} {net_damage} to {target.char_name}!");
+            string type_str = damage_type == DamageTypeEnum.PHYSICAL ? "physical damage" : "magical damage";
+            Debug.Log($"Attacker damage: {outgoing_attack_damage} ({type_str}); Target defense: {defense}");
+            Debug.Log($"{attacker.char_name} dealt ({net_damage}) {type_str} to {target.char_name}!");
+            Debug.Log(
+                $"{target.char_name} health status: {target.GetEffectiveHealth()}/{target.GetEffectiveMaxHealth()}"
+            );
         }
     }
 }

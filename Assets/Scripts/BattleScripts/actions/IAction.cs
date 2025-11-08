@@ -2,6 +2,6 @@ namespace BattleScripts.Actions
 {
     public interface IAction
     {
-         void PerformAction(BattleContext context);
+         void PerformAction(BattleContext context = null);
     }
 }

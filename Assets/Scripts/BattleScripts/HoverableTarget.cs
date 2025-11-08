@@ -32,11 +32,10 @@ public class HoverableTarget : MonoBehaviour, IPointerEnterHandler, IPointerExit
 
     public void Hover(bool is_hovered)
     {
-        Debug.Log($"hover attempt: {is_hovered}");
         ShowHoverIndicator(is_hovered);
     }
 
-    private void ShowHoverIndicator(bool should_show)
+    public void ShowHoverIndicator(bool should_show)
     {
         if (
             hover_indicator_
@@ -44,10 +43,6 @@ public class HoverableTarget : MonoBehaviour, IPointerEnterHandler, IPointerExit
         )
         {
             hover_indicator_.SetActive(should_show);
-            Transform parent_character_gameobject = this.transform;
-
-            if (parent_character_gameobject) Debug.Log($"Hovering over: {parent_character_gameobject.name}");
-            else Debug.Log("No parent character found.");
         }
     }
 }

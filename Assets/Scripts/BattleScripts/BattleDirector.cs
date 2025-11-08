@@ -4,6 +4,7 @@ using UnityEngine;
 using BattleScripts;
 using BattleScripts.Enums;
 using BattleScripts.Abilities;
+using BattleScripts.Actions;
 
 public class BattleDirector : MonoBehaviour
 {
@@ -17,7 +18,6 @@ public class BattleDirector : MonoBehaviour
     BattleStateEnum battle_state;
 
     PlayerIntent player_intent;
-    public static PlayerIntent player_intent_instance;
     Queue<Instruction> instruction_queue;
 
     int ticks;
@@ -38,12 +38,11 @@ public class BattleDirector : MonoBehaviour
         Debug.Log("The BattleDirector");
         // TODO: figure out how to get/communicate stuff from the overworld scene
         // Init() function of sorts
-        // action_panel_ui // todo: hide it
+        action_panel_ui.SetActive(false);
         SetBattleState(BattleStateEnum.PRE_BATTLE);
         SetControlContext(ControlContextEnum.WAITING);
         battle_context = new BattleContext();
         player_intent = new PlayerIntent(battle_context);
-        player_intent_instance = player_intent;
         ticks = 0;
         should_execute_tick = false;
 
@@ -128,11 +127,13 @@ public class BattleDirector : MonoBehaviour
           
         }
     }
+
     void DetermineBattleState()
     {
         if (ready_characters.Count == 0) SetBattleState(BattleStateEnum.WAITING);
         else EnterActiveTurnState();
     }
+
     IEnumerator WaitingLoop()
     {
         yield return new WaitForSeconds(0.33f);
@@ -157,6 +158,30 @@ public class BattleDirector : MonoBehaviour
         ready_characters.Clear();
     }
 
+    public void ExecuteInstructionQueue()
+    {
+        StartCoroutine(InstructionQueueCoroutine());
+        emit_finished_instructions?.Invoke();
+    }
+    
+    IEnumerator InstructionQueueCoroutine()
+    {
+        while (instruction_queue.Count > 0)
+        {
+            Instruction instruction = instruction_queue.Dequeue();
+            Debug.Log("Executing instruction set");
+            foreach (IAction action in instruction.actions)
+            {
+                action.PerformAction();
+            }
+            //this was an auto-complete suggestion, keeping for now as it may be an idea for something.
+            //probably for animations
+            //StartCoroutine(instruction.actions[0].ExecuteAction());
+        }
+        Debug.Log("Finished executing instruction queue");
+        yield return null;
+    }
+
     void SetBattleState(BattleStateEnum new_state)
     {
         // can do stuff here when needed...
@@ -165,7 +190,15 @@ public class BattleDirector : MonoBehaviour
 
     void SetControlContext(ControlContextEnum new_context)
     {
-        // can do stuff...
+        switch (new_context)
+        {
+            case ControlContextEnum.ACTION_SELECTION:
+                action_panel_ui.SetActive(true);
+                break;
+            default:
+                action_panel_ui.SetActive(false);
+                break;
+        }
         control_context = new_context;
     }
 
@@ -182,11 +215,10 @@ public class BattleDirector : MonoBehaviour
     {
         // TODO: if player-controlled character:
         // reset action panel state, load up with character-specific info
-        // show action panel
         emit_finished_instructions += character.ListenForInstructionsCompleted;
         Transform character_transform = character.transform;
         RectTransform ui_rect_transform = action_panel_ui.GetComponent<RectTransform>();
-        Vector2 new_position = character_transform.position + new Vector3(0, 1.8f);
+        Vector2 new_position = character_transform.position + new Vector3(0, 2.0f);
         Vector2 screen_position = Camera.main.WorldToScreenPoint(new_position);
         ui_rect_transform.position = screen_position;
 
@@ -257,13 +289,21 @@ public class BattleDirector : MonoBehaviour
     public void ButtonTargetSelected(Character character)
     {
         if (control_context != ControlContextEnum.TARGETING) return;
-        Debug.Log("Target selected: " + character.char_name);
         player_intent.SetSelectedTarget(character);
         Instruction instruction = player_intent.BuildInstruction();
 
         if (instruction != null) PushIntoInstructionQueue(instruction);
 
-        // stub: execute instruction queue
+        // note: hopefully this architecture so far will scale well...
+        // really worried for no reason but we'll fix it surely.
+        // stub: execute instruction queue already?
+        Debug.Log("Should Execute Instructions right about now");
+        HoverableTarget character_hoverable_target = character.transform.gameObject.GetComponent<HoverableTarget>();
+
+        if (character_hoverable_target != null) character_hoverable_target.ShowHoverIndicator(false);
+
+        ExecuteInstructionQueue();
+
     }
 
     public void PushIntoInstructionQueue(Instruction instruction)
@@ -294,6 +334,7 @@ public class BattleDirector : MonoBehaviour
             battle_context.AddCharacterToContext(wolf_character);
 
             wolf_gameobject.AddComponent<HoverableTarget>().Initialize(wolf_character);
+            wolf_gameobject.AddComponent<SelectableTarget>().Initialize(wolf_character);
         }
 
         if (wolf_count > 0 && characters.Count > 0)
@@ -335,6 +376,7 @@ public class BattleDirector : MonoBehaviour
         Character wolf_character = wolf.GetComponent<Character>();
         wolf_character.char_name = wolf.name;
         wolf_character.health_base = 30;
+        wolf_character.health_max_base = 30;
         wolf_character.speed_base = 3;
         wolf_character.readiness_threshold_base = 100;
         wolf_character.physical_attack_base = 5;
@@ -343,6 +385,8 @@ public class BattleDirector : MonoBehaviour
         wolf_character.magical_defense_base = 0;
         wolf_character.faction = CharacterFactionEnum.ENEMY;
         wolf_character.role = CharacterRoleEnum.CREEP;
+        // temporarily player controlled
+        wolf_character.is_player_controlled = true;
 
         return wolf_character;
     }
@@ -362,6 +406,7 @@ public class BattleDirector : MonoBehaviour
             battle_context.AddCharacterToContext(hero_character);
 
             hero_gameobject.AddComponent<HoverableTarget>().Initialize(hero_character);
+            hero_gameobject.AddComponent<SelectableTarget>().Initialize(hero_character);
         }
     }
     
@@ -396,7 +441,8 @@ public class BattleDirector : MonoBehaviour
         hero.AddComponent<Character>();
         Character hero_character = hero.GetComponent<Character>();
         hero_character.char_name = hero.name;
-        hero_character.health_base = 30;
+        hero_character.health_base = 50;
+        hero_character.health_max_base = 50;
         hero_character.speed_base = 5;
         hero_character.readiness_threshold_base = 100;
         hero_character.physical_attack_base = 5;

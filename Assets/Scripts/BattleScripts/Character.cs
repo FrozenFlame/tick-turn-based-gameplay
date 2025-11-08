@@ -205,6 +205,12 @@ public class Character : MonoBehaviour
         return net_health;
     }
 
+    public float GetEffectiveMaxHealth()
+    {
+        float net_max_health = health_max_base + health_max_modifier;
+        return net_max_health;
+    }
+
     public void TakeDamage(float damage)
     {
         float net_damage = damage;
