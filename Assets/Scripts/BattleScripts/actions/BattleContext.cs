@@ -13,6 +13,7 @@ namespace BattleScripts
         public List<Character> player_characters;
         public List<Character> enemy_characters;
 
+        public Character active_character;
         public Character last_clicked_character;
 
         public BattleContext()
@@ -37,6 +38,12 @@ namespace BattleScripts
                 if (character.faction == CharacterFactionEnum.FRIENDLY) player_characters.Add(character);
                 else if (character.faction == CharacterFactionEnum.ENEMY) enemy_characters.Add(character);
             }
+        }
+
+        public void ClearPointers()
+        {
+            active_character = null;
+            last_clicked_character = null;
         }
 
         public Character GetSelectedTarget()

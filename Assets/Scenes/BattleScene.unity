@@ -1021,7 +1021,7 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 977895626}
         m_TargetAssemblyTypeName: BattleDirector, Assembly-CSharp
-        m_MethodName: ClickedAttack
+        m_MethodName: ButtonAttackClicked
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}

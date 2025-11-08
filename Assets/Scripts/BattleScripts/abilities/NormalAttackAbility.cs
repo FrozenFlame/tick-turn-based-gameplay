@@ -3,9 +3,9 @@ using BattleScripts.Enums;
 
 namespace BattleScripts.Abilities
 {
-    public class NormalPhysicalAttackAbility : IAbility
+    public class NormalAttackAbility : IAbility
     {
-        public string name => "physical_attack";
+        public string name => "attack";
         public string display_name => "Attack";
 
         // public string description?
@@ -14,12 +14,16 @@ namespace BattleScripts.Abilities
         public Instruction BuildInstruction(Character source, BattleContext context)
         {
             Instruction instruction = new Instruction();
-            Character target = context.GetSelectedTarget();
+            Character target = source.target_character;
+
+            DamageTypeEnum damage_type = (source.role != CharacterRoleEnum.MAGE)
+                ? DamageTypeEnum.PHYSICAL
+                : DamageTypeEnum.MAGICAL;
 
             SingleTargetAttackAction action = new SingleTargetAttackAction(
                 source,
                 target,
-                DamageTypeEnum.PHYSICAL
+                damage_type
             );
             /**
              *  can do stuff like this maybe (?) or maybe this is the wrong implementation, anyways.
@@ -32,6 +36,5 @@ namespace BattleScripts.Abilities
             instruction.actions.Add(action);
             return instruction;
         }
-
     }
 }

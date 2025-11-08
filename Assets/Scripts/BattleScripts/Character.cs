@@ -133,21 +133,32 @@ public class Character : MonoBehaviour
 
     private CharacterStateEnum state_;
     public CharacterFactionEnum faction;
+    public CharacterRoleEnum role;
+    public bool is_player_controlled;
 
+    public IAbility basic_attack_ability;
     public List<IAbility> abilities;
 
-    public bool has_instruction_queued;
+    public bool has_finished_instructions;
+    
 
-    private Character target_character_;
+    public Character target_character;
 
     // stubs
     // Effect[] active_effects;
     // Equipment[] equipment; (usually up to two only);
-    // State state -- state of some sort maybe like: waiting, ready, skipped, finished, etc. could be useful for other logic stuff.
+    // AIBehavior ai_behavior;
 
     void Start()
     {
         Debug.Log("I have been instantiated");
+        Initialize();
+    }
+
+    private void Initialize()
+    {
+        basic_attack_ability = new NormalAttackAbility();
+        is_player_controlled = false;
     }
 
     void OnDestroy()
@@ -160,7 +171,7 @@ public class Character : MonoBehaviour
 
     }
     
-    void BattleStart()
+    public void BattleStart()
     {
         ChangeState(CharacterStateEnum.IDLE);
     }
@@ -263,8 +274,8 @@ public class Character : MonoBehaviour
         // Example test for now
         Debug.Log(char_name + ": Taking my turn...");
         ChangeState(CharacterStateEnum.ACTIVE);
-        has_instruction_queued = false;
-        while (!has_instruction_queued)
+        has_finished_instructions = false;
+        while (!has_finished_instructions)
         {
             // do nothing but wait
             // temp fallback exit in case user cannot get out of this loop
@@ -291,16 +302,16 @@ public class Character : MonoBehaviour
      **/
     public void SetTargetCharacter(Character target)
     {
-        target_character_ = target;
+        target_character = target;
     }
 
     /***
      * Action Functions
      **/
-    public void ListenForInstructions()
+    public void ListenForInstructionsCompleted()
     {
-        Debug.Log("Performing an action...");
-        has_instruction_queued = true;
+        Debug.Log("Finished performing actions...");
+        has_finished_instructions = true;
     }
 
     public void ChangeState(CharacterStateEnum new_state)
@@ -308,5 +319,4 @@ public class Character : MonoBehaviour
         state_ = new_state;
     }
 
-    // void CastSkill(Skill skill) stub
 }

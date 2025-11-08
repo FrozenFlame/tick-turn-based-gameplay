@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using BattleScripts;
 using BattleScripts.Enums;
+using BattleScripts.Abilities;
 
 public class BattleDirector : MonoBehaviour
 {
@@ -15,12 +16,15 @@ public class BattleDirector : MonoBehaviour
     ControlContextEnum control_context;
     BattleStateEnum battle_state;
 
+    PlayerIntent player_intent;
+    Queue<Instruction> instruction_queue;
+
     int ticks;
     bool should_execute_tick;
     // FieldEffect[] active_field_effects;
     // combat_log -- todo
 
-    event System.Action emit_instruction_issued; // placeholder
+    event System.Action emit_finished_instructions;
 
     [SerializeField] private GameObject action_panel_ui;
 
@@ -33,12 +37,14 @@ public class BattleDirector : MonoBehaviour
         SetBattleState(BattleStateEnum.PRE_BATTLE);
         SetControlContext(ControlContextEnum.WAITING);
         battle_context = new BattleContext();
+        player_intent = new PlayerIntent(battle_context);
         ticks = 0;
         should_execute_tick = false;
 
         characters = new List<Character>();
         ready_characters = new List<Character>();
         execution_queue = new Queue<Character>();
+        instruction_queue = new Queue<Instruction>();
         StartBattle();
     }
 
@@ -61,7 +67,11 @@ public class BattleDirector : MonoBehaviour
         DebugCreateHeroes(2);
         DebugSimulateSummonWolves();
 
-        characters.ForEach(c => c.emit_character_ready += ListenOnCharacterReady);
+        characters.ForEach(c =>
+        {
+            c.emit_character_ready += ListenOnCharacterReady;
+            c.BattleStart();
+        });
 
         // note: probably we need to remove the listeners when the battle is resolved
         battle_context.SortRosters();
@@ -136,7 +146,7 @@ public class BattleDirector : MonoBehaviour
             Character next_character = PopFromExecutionQueue();
             yield return StartCoroutine(HandleCharacterTurn(next_character));
             Debug.Log("Finished handling turn for " + next_character.char_name);
-            emit_instruction_issued -= next_character.ListenForInstructions;
+            emit_finished_instructions -= next_character.ListenForInstructionsCompleted;
         }
         ready_characters.Clear();
     }
@@ -161,28 +171,13 @@ public class BattleDirector : MonoBehaviour
     {
         if (!ready_characters.Contains(character)) ready_characters.Add(character);
     }
-    
-
-    void ListenCharacterTakeTurn(Character character)
-    {
-        Dictionary<string, Character> dict = new Dictionary<string, Character>();
-        dict.Add(character.char_name, character);
-
-        //dict["vov0"].health_modifier;
-
-        /*
-         
-        Dictionary<string, CharacterUI> dict_ui = new Dictionary<string, CharacterUI>();
-        dict_ui[character.char_name].ShowButton(true);
-        */
-    }
 
     IEnumerator HandleCharacterTurn(Character character)
     {
         // TODO: if player-controlled character:
         // reset action panel state, load up with character-specific info
         // show action panel
-        emit_instruction_issued += character.ListenForInstructions;
+        emit_finished_instructions += character.ListenForInstructionsCompleted;
         Transform character_transform = character.transform;
         RectTransform ui_rect_transform = action_panel_ui.GetComponent<RectTransform>();
         Vector2 new_position = character_transform.position + new Vector3(0, 1.5f);
@@ -190,6 +185,8 @@ public class BattleDirector : MonoBehaviour
         ui_rect_transform.position = screen_position;
 
         // TODO: behave in accordance to if they are a player or AI controlled
+        battle_context.active_character = character;
+        SetControlContext(ControlContextEnum.ACTION_SELECTION);
         yield return character.TakeTurn();
     }
 
@@ -198,7 +195,6 @@ public class BattleDirector : MonoBehaviour
         if (!should_execute_tick) return;
 
         ticks++;
-
         TickProcesses();
     }
 
@@ -234,11 +230,43 @@ public class BattleDirector : MonoBehaviour
         return character;
     }
 
-    void EmptyQueues()
+    /***
+     * Action Panel UI Click Handlers
+     **/
+
+    // CONTEXT: ACTION_SELECTION
+    public void ButtonAttackClicked()
     {
-        // stub
+        if (control_context != ControlContextEnum.ACTION_SELECTION) return;
+        Debug.Log("Attack button clicked -- switch to targeting mode");
+        IAbility attack_ability = battle_context.active_character.basic_attack_ability;
+
+        player_intent.SetSelectedAbility(attack_ability);
+        SetControlContext(ControlContextEnum.TARGETING);
     }
 
+
+    // CONTEXT: TARGETING
+    // TODO: might need to figure out for multi-target selection later
+    public void ButtonTargetSelected(Character character)
+    {
+        if (control_context != ControlContextEnum.TARGETING) return;
+        Debug.Log("Target selected: " + character.char_name);
+        player_intent.SetSelectedTarget(character);
+        Instruction instruction = player_intent.BuildInstruction();
+
+        if (instruction != null) PushIntoInstructionQueue(instruction);
+
+        // stub: execute instruction queue
+    }
+
+    // public void HoverTarget() {} // stub
+
+    public void PushIntoInstructionQueue(Instruction instruction)
+    {
+        instruction_queue.Enqueue(instruction);
+        Debug.Log("Instruction enqueued");
+    }
 
     /***
      * Debug and testing functions. messy and unrefined
@@ -308,6 +336,7 @@ public class BattleDirector : MonoBehaviour
         wolf_character.physical_defense_base = 2;
         wolf_character.magical_defense_base = 0;
         wolf_character.faction = CharacterFactionEnum.ENEMY;
+        wolf_character.role = CharacterRoleEnum.CREEP;
 
         return wolf_character;
     }
@@ -367,18 +396,10 @@ public class BattleDirector : MonoBehaviour
         hero_character.physical_defense_base = 2;
         hero_character.magical_defense_base = 0;
         hero_character.faction = CharacterFactionEnum.FRIENDLY;
+        hero_character.role = CharacterRoleEnum.WARRIOR;
+        hero_character.is_player_controlled = true;
 
         return hero_character;
-    }
-
-
-    /***
-     * Temporary exposed button function
-     **/
-    public void ClickedAttack()
-    {
-        Debug.Log("Attack button clicked");
-        emit_instruction_issued?.Invoke();
     }
 }
 
