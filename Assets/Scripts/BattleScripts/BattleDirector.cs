@@ -7,16 +7,17 @@ using BattleScripts.Abilities;
 
 public class BattleDirector : MonoBehaviour
 {
-    // stubs
-    // enum current_battle_state;
+    public static BattleDirector instance { get; private set; }
+
     List<Character> characters;
     List<Character> ready_characters;
     Queue<Character> execution_queue;
     BattleContext battle_context;
-    ControlContextEnum control_context;
+    public ControlContextEnum control_context;
     BattleStateEnum battle_state;
 
     PlayerIntent player_intent;
+    public static PlayerIntent player_intent_instance;
     Queue<Instruction> instruction_queue;
 
     int ticks;
@@ -28,6 +29,10 @@ public class BattleDirector : MonoBehaviour
 
     [SerializeField] private GameObject action_panel_ui;
 
+    private void Awake()
+    {
+        instance = this;
+    }
     void Start()
     {
         Debug.Log("The BattleDirector");
@@ -38,6 +43,7 @@ public class BattleDirector : MonoBehaviour
         SetControlContext(ControlContextEnum.WAITING);
         battle_context = new BattleContext();
         player_intent = new PlayerIntent(battle_context);
+        player_intent_instance = player_intent;
         ticks = 0;
         should_execute_tick = false;
 
@@ -180,7 +186,7 @@ public class BattleDirector : MonoBehaviour
         emit_finished_instructions += character.ListenForInstructionsCompleted;
         Transform character_transform = character.transform;
         RectTransform ui_rect_transform = action_panel_ui.GetComponent<RectTransform>();
-        Vector2 new_position = character_transform.position + new Vector3(0, 1.5f);
+        Vector2 new_position = character_transform.position + new Vector3(0, 1.8f);
         Vector2 screen_position = Camera.main.WorldToScreenPoint(new_position);
         ui_rect_transform.position = screen_position;
 
@@ -260,8 +266,6 @@ public class BattleDirector : MonoBehaviour
         // stub: execute instruction queue
     }
 
-    // public void HoverTarget() {} // stub
-
     public void PushIntoInstructionQueue(Instruction instruction)
     {
         instruction_queue.Enqueue(instruction);
@@ -288,6 +292,8 @@ public class BattleDirector : MonoBehaviour
             Character wolf_character = DebugAttachWolfCharacter(wolf_gameobject);
             characters.Add(wolf_character);
             battle_context.AddCharacterToContext(wolf_character);
+
+            wolf_gameobject.AddComponent<HoverableTarget>().Initialize(wolf_character);
         }
 
         if (wolf_count > 0 && characters.Count > 0)
@@ -354,6 +360,8 @@ public class BattleDirector : MonoBehaviour
             Character hero_character = DebugAttachHeroCharacter(hero_gameobject);
             characters.Add(hero_character);
             battle_context.AddCharacterToContext(hero_character);
+
+            hero_gameobject.AddComponent<HoverableTarget>().Initialize(hero_character);
         }
     }
     

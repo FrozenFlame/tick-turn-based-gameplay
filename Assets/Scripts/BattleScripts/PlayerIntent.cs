@@ -44,8 +44,15 @@ namespace BattleScripts
 
             source.SetTargetCharacter(selected_target_);
             Instruction instruction = selected_ability_.BuildInstruction(source, battle_context);
+            ResetIntent();
 
             return instruction;
+        }
+
+        private void ResetIntent()
+        {
+            selected_ability_ = null;
+            selected_target_ = null;
         }
     }
 }

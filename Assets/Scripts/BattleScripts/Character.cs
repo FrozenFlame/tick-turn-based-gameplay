@@ -141,7 +141,6 @@ public class Character : MonoBehaviour
 
     public bool has_finished_instructions;
     
-
     public Character target_character;
 
     // stubs
