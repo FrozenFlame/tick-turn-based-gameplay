@@ -1,4 +1,4 @@
-﻿namespace BattleScripts.enums
+﻿namespace BattleScripts.Enums
 {
     public enum BattleStateEnum
     {

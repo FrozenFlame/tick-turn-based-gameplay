@@ -16,7 +16,7 @@ namespace BattleScripts.Actions
             this.damage_type = damage_type;
         }
 
-        public void PerformAction(TargetingContext context)
+        public void PerformAction(BattleContext context)
         {
             float outgoing_attack_damage = 0f;
             float defense = 0f;

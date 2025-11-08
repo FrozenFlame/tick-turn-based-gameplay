@@ -1,21 +1,22 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using BattleScripts;
 using BattleScripts.Enums;
-using BattleScripts.enums;
 
 public class BattleDirector : MonoBehaviour
 {
     // stubs
     // enum current_battle_state;
     List<Character> characters;
-    // Map<Character[]> team_members; // stub idk if Map is the right tool for the job
     List<Character> ready_characters;
     Queue<Character> execution_queue;
+    BattleContext battle_context;
     ControlContextEnum control_context;
     BattleStateEnum battle_state;
-    // int ticks;
-    // bool should_execute_tick;
+
+    int ticks;
+    bool should_execute_tick;
     // FieldEffect[] active_field_effects;
     // combat_log -- todo
 
@@ -26,7 +27,12 @@ public class BattleDirector : MonoBehaviour
     void Start()
     {
         Debug.Log("The BattleDirector");
-        // action_panel_ui // do nothing for now
+        // TODO: figure out how to get/communicate stuff from the overworld scene
+        // Init() function of sorts
+        // action_panel_ui // todo: hide it
+        battle_context = new BattleContext();
+        ticks = 0;
+        should_execute_tick = false;
         control_context = ControlContextEnum.WAITING;
         characters = new List<Character>();
         ready_characters = new List<Character>();
@@ -54,24 +60,19 @@ public class BattleDirector : MonoBehaviour
         DebugCreateHeroes(2);
         DebugSimulateSummonWolves();
 
-        characters.ForEach(c =>
-        {
-            c.emit_character_ready += ListenOnCharacterReady;
-        });
+        characters.ForEach(c => c.emit_character_ready += ListenOnCharacterReady);
 
         // note: probably we need to remove the listeners when the battle is resolved
-
+        battle_context.SortRosters();
         battle_state = BattleStateEnum.WAITING;
+        should_execute_tick = true;
         StartCoroutine(BattleLoop());
     }
 
     void EndBattle()
     {
         // some clean-up operations i guess
-        characters.ForEach(c =>
-        {
-            c.emit_character_ready -= ListenOnCharacterReady;
-        });
+        characters.ForEach(c => c.emit_character_ready -= ListenOnCharacterReady);
     }
     
 
@@ -121,10 +122,7 @@ public class BattleDirector : MonoBehaviour
 
     void ListenOnCharacterReady(Character character)
     {
-        if (!ready_characters.Contains(character))
-        {
-            ready_characters.Add(character);
-        }
+        if (!ready_characters.Contains(character)) ready_characters.Add(character);
     }
     
 
@@ -161,13 +159,10 @@ public class BattleDirector : MonoBehaviour
 
     void OnTick()
     {
-        if (characters != null)
-        {
-            characters.ForEach(c =>
-            {
-                c.Tick();
-            });
-        }
+        if (!should_execute_tick) return;
+
+        ticks++;
+        if (characters != null) characters.ForEach(c => c.Tick());
     }
 
     void PrepareExecutionQueue()
@@ -180,10 +175,7 @@ public class BattleDirector : MonoBehaviour
         Debug.Log("sorted ready list:");
         ready_characters.ForEach(c => Debug.Log(c.char_name + " with speed " + c.GetEffectiveSpeed()));
 
-        ready_characters.ForEach(c =>
-        {
-            PushIntoExecutionQueue(c);
-        });
+        ready_characters.ForEach(c => PushIntoExecutionQueue(c));
     }
 
     Character PushIntoExecutionQueue(Character character)
@@ -225,6 +217,7 @@ public class BattleDirector : MonoBehaviour
             wolf_gameobject.transform.position = new Vector2(enemy_position_x, enemy_position_y);
             Character wolf_character = DebugAttachWolfCharacter(wolf_gameobject);
             characters.Add(wolf_character);
+            battle_context.AddCharacterToContext(wolf_character);
         }
 
         if (wolf_count > 0 && characters.Count > 0)
@@ -254,10 +247,8 @@ public class BattleDirector : MonoBehaviour
             Color enemy_color = new Color(255, 43, 35);
             wolf_sprite_renderer.color = enemy_color;
         }
-        else
-        {
-            Debug.Log("Sprite not found");
-        }
+        else Debug.Log("Sprite not found");
+
         return wolf;
     }
 
@@ -274,6 +265,7 @@ public class BattleDirector : MonoBehaviour
         wolf_character.magical_attack_base = 0;
         wolf_character.physical_defense_base = 2;
         wolf_character.magical_defense_base = 0;
+        wolf_character.faction = CharacterFactionEnum.ENEMY;
 
         return wolf_character;
     }
@@ -290,6 +282,7 @@ public class BattleDirector : MonoBehaviour
             hero_gameobject.transform.position = new Vector2(hero_position_x, hero_position_y);
             Character hero_character = DebugAttachHeroCharacter(hero_gameobject);
             characters.Add(hero_character);
+            battle_context.AddCharacterToContext(hero_character);
         }
     }
     
@@ -313,10 +306,7 @@ public class BattleDirector : MonoBehaviour
             SpriteRenderer hero_sprite_renderer = hero.GetComponent<SpriteRenderer>();
             hero_sprite_renderer.sprite = hero_sprite;
         }
-        else
-        {
-            Debug.Log("Sprite not found");
-        }
+        else Debug.Log("Sprite not found");
 
         return hero;
     }
@@ -334,6 +324,7 @@ public class BattleDirector : MonoBehaviour
         hero_character.magical_attack_base = 0;
         hero_character.physical_defense_base = 2;
         hero_character.magical_defense_base = 0;
+        hero_character.faction = CharacterFactionEnum.FRIENDLY;
 
         return hero_character;
     }

@@ -2,8 +2,8 @@
 {
     public enum CharacterFactionEnum
     {
+        NEUTRAL,
         FRIENDLY,
         ENEMY,
-        NEUTRAL,
     }
 }

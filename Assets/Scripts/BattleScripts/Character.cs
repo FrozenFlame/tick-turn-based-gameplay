@@ -202,6 +202,11 @@ public class Character : MonoBehaviour
         health_modifier -= net_damage;
     }
 
+    public bool IsAlive()
+    {
+        return GetEffectiveHealth() > 0;
+    }
+
     /***
      * Mana Functions
      **/

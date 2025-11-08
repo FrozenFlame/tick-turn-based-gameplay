@@ -1,6 +1,5 @@
 using BattleScripts.Actions;
 using BattleScripts.Enums;
-using NUnit.Framework;
 
 namespace BattleScripts.Abilities
 {
@@ -12,7 +11,7 @@ namespace BattleScripts.Abilities
         // public string description?
         // public string image_url?
 
-        public Instruction BuildInstruction(Character source, TargetingContext context)
+        public Instruction BuildInstruction(Character source, BattleContext context)
         {
             Instruction instruction = new Instruction();
             Character target = context.GetSelectedTarget();
