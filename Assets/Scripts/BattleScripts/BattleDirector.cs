@@ -30,10 +30,12 @@ public class BattleDirector : MonoBehaviour
         // TODO: figure out how to get/communicate stuff from the overworld scene
         // Init() function of sorts
         // action_panel_ui // todo: hide it
+        SetBattleState(BattleStateEnum.PRE_BATTLE);
+        SetControlContext(ControlContextEnum.WAITING);
         battle_context = new BattleContext();
         ticks = 0;
         should_execute_tick = false;
-        ChangeControlContext(ControlContextEnum.WAITING);
+
         characters = new List<Character>();
         ready_characters = new List<Character>();
         execution_queue = new Queue<Character>();
@@ -63,7 +65,7 @@ public class BattleDirector : MonoBehaviour
 
         // note: probably we need to remove the listeners when the battle is resolved
         battle_context.SortRosters();
-        ChangeBattleState(BattleStateEnum.WAITING);
+        SetBattleState(BattleStateEnum.WAITING);
         should_execute_tick = true;
         StartCoroutine(BattleLoop());
     }
@@ -92,35 +94,60 @@ public class BattleDirector : MonoBehaviour
 
     IEnumerator BattleLoop()
     {
-        while (true) // TODO: change this to check current battle state for event/resolution handling
+        while (battle_state != BattleStateEnum.RESOLVED)
         {
-            if (ready_characters.Count == 0)
+            DetermineBattleState();
+            switch(battle_state)
             {
-                yield return new WaitForSeconds(0.33f);
-                OnTick();
+                case BattleStateEnum.WAITING:
+                    yield return WaitingLoop();
+                    break;
+                case BattleStateEnum.ACTIVE_TURN:
+                    yield return ActiveTurnLoop();
+                    break;
+                default:
+                    Debug.Log("BattleDirector: Unhandled battle state in BattleLoop");
+                    break;
             }
-            else
-            {
-                PrepareExecutionQueue();
-                while (execution_queue.Count > 0)
-                {
-                    Character next_character = PopFromExecutionQueue();
-                    yield return StartCoroutine(HandleCharacterTurn(next_character));
-                    Debug.Log("Finished handling turn for " + next_character.char_name);
-                    emit_instruction_issued -= next_character.ListenForInstructions;
-                }
-                ready_characters.Clear();
-            }
+          
         }
     }
+    void DetermineBattleState()
+    {
+        if (ready_characters.Count == 0) SetBattleState(BattleStateEnum.WAITING);
+        else EnterActiveTurnState();
+    }
+    IEnumerator WaitingLoop()
+    {
+        yield return new WaitForSeconds(0.33f);
+        OnTick();
+    }
 
-    void ChangeBattleState(BattleStateEnum new_state)
+    void EnterActiveTurnState()
+    {
+        PrepareExecutionQueue();
+        SetBattleState(BattleStateEnum.ACTIVE_TURN);
+    }
+
+    IEnumerator ActiveTurnLoop()
+    {
+        while (execution_queue.Count > 0)
+        {
+            Character next_character = PopFromExecutionQueue();
+            yield return StartCoroutine(HandleCharacterTurn(next_character));
+            Debug.Log("Finished handling turn for " + next_character.char_name);
+            emit_instruction_issued -= next_character.ListenForInstructions;
+        }
+        ready_characters.Clear();
+    }
+
+    void SetBattleState(BattleStateEnum new_state)
     {
         // can do stuff here when needed...
         battle_state = new_state;
     }
 
-    void ChangeControlContext(ControlContextEnum new_context)
+    void SetControlContext(ControlContextEnum new_context)
     {
         // can do stuff...
         control_context = new_context;
@@ -156,14 +183,13 @@ public class BattleDirector : MonoBehaviour
         // reset action panel state, load up with character-specific info
         // show action panel
         emit_instruction_issued += character.ListenForInstructions;
-        Debug.Log("Here is the position of the character: ");
         Transform character_transform = character.transform;
         RectTransform ui_rect_transform = action_panel_ui.GetComponent<RectTransform>();
-        Debug.Log($"X:{character.transform.position.x}, Y: {character.transform.position.y}");
         Vector2 new_position = character_transform.position + new Vector3(0, 1.5f);
         Vector2 screen_position = Camera.main.WorldToScreenPoint(new_position);
         ui_rect_transform.position = screen_position;
 
+        // TODO: behave in accordance to if they are a player or AI controlled
         yield return character.TakeTurn();
     }
 
